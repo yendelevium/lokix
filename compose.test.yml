@@ -1,0 +1,8 @@
+name: lokix-test
+services:
+  crawler:
+    restart: on-failure
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: build-test

@@ -1,0 +1,7 @@
+name: lokix
+services:
+  crawler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: run-test-stage
