@@ -1,4 +1,5 @@
-# LOKIX - A go based web crawler
+# LOKIX - A go based web crawler [WIP]
+NOTE: _work in progress_
 
 A project to learn more about web crawler internals. Topics to cover:
 - What is a web-crawler? How does it work?
