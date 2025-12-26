@@ -6,4 +6,4 @@ services:
       # When the value supplied is a relative path, it is interpreted as relative to the location of the Compose file.
       context: .
       dockerfile: Dockerfile
-      target: run-test-stage
+      target: build-release-stage
