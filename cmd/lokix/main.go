@@ -48,22 +48,23 @@ func (q *Queue) Dequeue() (string, error) {
 
 }
 
-func worker(id int, jobs <-chan string, results chan<- struct{}, queue *Queue) {
+// This will act as our thread-pool
+func worker(id int, jobs <-chan string, signal chan<- struct{}, queue *Queue) {
 	for job := range jobs {
 		byteData := internal.FetchPage(job)
-		keywords, links := internal.ParseHTML(byteData, "https://en.wikipedia.org")
+		keywords, pageHyperlinks := internal.ParseHTML(byteData, "https://en.wikipedia.org")
 
 		log.Printf("JOB %d: URL: %s DATA: %v", id, job, keywords)
 
 		queue.mu.Lock()
 		if queue.head == nil {
-			for _, link := range links {
-				queue.Enqueue(link)
+			for _, hyperlink := range pageHyperlinks {
+				queue.Enqueue(hyperlink)
 			}
-			results <- struct{}{}
+			signal <- struct{}{}
 		} else {
-			for _, link := range links {
-				queue.Enqueue(link)
+			for _, hyperlink := range pageHyperlinks {
+				queue.Enqueue(hyperlink)
 			}
 		}
 		queue.mu.Unlock()
@@ -82,40 +83,44 @@ func main() {
 		tail: &seed,
 		mu:   &sync.Mutex{},
 	}
-
+	scrapedCount := 0
 	jobs := make(chan string, 10)
-	results := make(chan struct{}, 1)
+	signal := make(chan struct{}, 1)
+
+	// Initializing the threadpool
 	for i := range 10 {
-		go worker(i, jobs, results, &scheduler)
+		go worker(i, jobs, signal, &scheduler)
 	}
 
-	scrape_count := 0
-
+	// Main scheduling logic
 	for {
 		scheduler.mu.Lock()
-		scrapeURL, err := scheduler.Dequeue()
+		targetURL, err := scheduler.Dequeue()
 		scheduler.mu.Unlock()
 
 		if err != nil {
 			// Wait
-			<-results
-			scrapeURL, err = scheduler.Dequeue()
+			<-signal
+			targetURL, err = scheduler.Dequeue()
 
-			// Termination condition (But will fail if i have 2 routines, one doesn't have any URLS and sends msg through channel)
-			// If the 2nd one had the program terminates early
+			// Termination condition (But will terminate early if the first routine to send signal doesn't have any URLs in it's HTML
+			// Even if the other workers have, I'm only checking the first signal and terminating based on that, making this flawed
 			if err != nil {
 				close(jobs)
-				close(results)
+				close(signal)
 				break
 			}
 		}
-		jobs <- scrapeURL
-		scrape_count++
 
-		// This can also stop while scraping is going on so gotta think abt that
-		if scrape_count == 500 {
+		// Dispatch job to worker
+		jobs <- targetURL
+		scrapedCount++
+
+		// Another ending condition -> when I readch 500 scraped URLS (imperfect again)
+		// This can stop while the final (or even more) goroutine hasn't finished scraping so gotta think abt that
+		if scrapedCount == 500 {
 			close(jobs)
-			close(results)
+			close(signal)
 			break
 		}
 	}

@@ -34,8 +34,8 @@ func ParseHTML(htmlData []byte, sourceURL string) ([]string, []string) {
 	keywords := make([]string, 1000)
 	keywordIdx := 0
 
-	urlList := make([]string, 50)
-	urlIdx := 0
+	pageHyperlinks := make([]string, 50)
+	pageHyperlinkIdx := 0
 
 	startParsing := false
 
@@ -47,10 +47,10 @@ func ParseHTML(htmlData []byte, sourceURL string) ([]string, []string) {
 		switch tokenType {
 		case html.ErrorToken:
 			if tokenizer.Err() == io.EOF {
-				return keywords, urlList
+				return keywords, pageHyperlinks
 			}
 			log.Printf("Error: %v", tokenizer.Err())
-			return keywords, urlList
+			return keywords, pageHyperlinks
 
 		// Wrapping the 2nd switch_case inside html.StartTagToken as otherwise
 		// token.Data activates twice - once for opening and one for closing
@@ -70,11 +70,11 @@ func ParseHTML(htmlData []byte, sourceURL string) ([]string, []string) {
 					continue
 				}
 				for _, attr := range token.Attr {
-					// Need to sanitize this data -> only https, nd no query params in the link
+					// Need to sanitize the hyperlinks -> no query params in the link + add protocol + domainname (if missing)
+					// This implementation is tailored to wikipedia
 					// Use the net/url pkg for this
 					if attr.Key == "href" {
-						// log.Println(word.Val)
-						if urlIdx >= len(urlList) {
+						if pageHyperlinkIdx >= len(pageHyperlinks) {
 							continue
 						}
 
@@ -82,8 +82,8 @@ func ParseHTML(htmlData []byte, sourceURL string) ([]string, []string) {
 						if err != nil {
 							log.Printf("Malformed URL: %v", err)
 						}
-						urlList[urlIdx] = sourceURL + parsedURL.Path
-						urlIdx++
+						pageHyperlinks[pageHyperlinkIdx] = sourceURL + parsedURL.Path
+						pageHyperlinkIdx++
 					}
 				}
 			}
