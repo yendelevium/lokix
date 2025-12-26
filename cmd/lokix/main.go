@@ -8,5 +8,6 @@ import (
 
 func main() {
 	log.Println("BYE, lokix")
-	internal.FetchPage("https://google.com")
+	byteData := internal.FetchPage("https://en.wikipedia.org/wiki/Plant")
+	internal.ParseHTML(byteData, "https://en.wikipedia.org")
 }

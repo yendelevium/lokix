@@ -7,12 +7,21 @@ import (
 )
 
 func FetchPage(url string) []byte {
-	resp, err := http.Get(url)
+	req, err := http.NewRequest(http.MethodGet, url, http.NoBody)
+	if err != nil {
+		log.Println(err)
+		return []byte{}
+	}
+	// Some sites need a user-agent to allow crawling
+	req.Header.Set("User-Agent", "Golang_Spider_Bot/3.0")
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Printf("Failed to fetch URL: %s", err.Error())
 		return []byte{}
 	}
 	defer resp.Body.Close()
+	log.Println("Recvd Data")
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -20,6 +29,5 @@ func FetchPage(url string) []byte {
 		return []byte{}
 	}
 
-	log.Println(string(body))
 	return body
 }

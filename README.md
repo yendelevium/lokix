@@ -39,3 +39,5 @@ The search engine functionality is basically just an inverted index table for no
 I also want to limit the number of keywords analyzed per website to a limit as I don't want an insanely large collection -> building a search engine is not the primary purpose of this project. This will also help in leading to the different pages being parsed in about the same time, which might help performance...
 
 I'll first implement a "static" search engine, where I first crawl how much I want to crawl and then search. But I also want to try dynamic updation of indices -> crawling continues in the bg and search engine also works.
+
+![Crawler Workflow](queue_scrape_parse.png)
