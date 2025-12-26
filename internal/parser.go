@@ -21,9 +21,9 @@ var ignoreTags []string = []string{"script", "style"}
 
 // This ParseHTML function is tailored to parse Wikipedia Pages (removing all unnecessary headers and stuff, with page of contents)
 // To make it more general purpose remove the startParsing logic
-func ParseHTML(htmlData []byte, sourceURL string) {
+func ParseHTML(htmlData []byte, sourceURL string) ([]string, []string) {
 	if len(htmlData) == 0 {
-		return
+		return []string{}, []string{}
 	}
 	byteReader := bytes.NewReader(htmlData)
 	tokenizer := html.NewTokenizer(byteReader)
@@ -47,10 +47,10 @@ func ParseHTML(htmlData []byte, sourceURL string) {
 		switch tokenType {
 		case html.ErrorToken:
 			if tokenizer.Err() == io.EOF {
-				return
+				return keywords, urlList
 			}
 			log.Printf("Error: %v", tokenizer.Err())
-			return
+			return keywords, urlList
 
 		// Wrapping the 2nd switch_case inside html.StartTagToken as otherwise
 		// token.Data activates twice - once for opening and one for closing
@@ -94,7 +94,7 @@ func ParseHTML(htmlData []byte, sourceURL string) {
 			}
 			// To skip script and style tags that take up the word count
 			if slices.Contains(ignoreTags, previousStartTag) {
-				log.Println("Skip", previousStartTag)
+				// log.Println("Skip", previousStartTag)
 				continue
 			}
 
