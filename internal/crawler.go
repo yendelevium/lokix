@@ -20,10 +20,12 @@ func FetchPage(url string) []byte {
 		log.Printf("Failed to fetch: %s, URL: %s", err.Error(), url)
 		return []byte{}
 	}
+
 	if resp.StatusCode != http.StatusOK {
 		// Couldn't fetch URL, so return empty body
 		return []byte{}
 	}
+
 	defer resp.Body.Close()
 	// log.Println("Recvd Data", resp.Status)
 

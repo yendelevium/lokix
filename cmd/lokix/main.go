@@ -27,6 +27,10 @@ func worker(id int, jobs <-chan string, queue *collections.Queue, dbClient *inte
 		crawledSet.Add(job)
 
 		for _, hyperlink := range pageHyperlinks {
+			if hyperlink == "" {
+				// The page didn't have min 50 URLS, so the remaining are empty
+				continue
+			}
 			queue.Enqueue(hyperlink)
 		}
 
