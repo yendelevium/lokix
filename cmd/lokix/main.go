@@ -49,13 +49,15 @@ func (q *Queue) Dequeue() (string, error) {
 }
 
 // This will act as our thread-pool
-func worker(id int, jobs <-chan string, signal chan<- struct{}, queue *Queue) {
+func worker(id int, jobs <-chan string, signal chan<- struct{}, queue *Queue, dbClient *internal.DBClient) {
 	for job := range jobs {
 		byteData := internal.FetchPage(job)
 		keywords, pageHyperlinks := internal.ParseHTML(byteData, "https://en.wikipedia.org")
 
 		log.Printf("JOB %d: URL: %s DATA: %v", id, job, keywords)
-
+		dbClient.Mu.Lock()
+		// DB Stuff
+		dbClient.Mu.Unlock()
 		queue.mu.Lock()
 		if queue.head == nil {
 			for _, hyperlink := range pageHyperlinks {
@@ -73,6 +75,10 @@ func worker(id int, jobs <-chan string, signal chan<- struct{}, queue *Queue) {
 
 func main() {
 	log.Println("BYE, lokix")
+
+	// Connect to DB
+	client := internal.ConnectMongo()
+
 	seed := node{
 		val:  "https://en.wikipedia.org/wiki/Plant",
 		next: nil,
@@ -89,7 +95,7 @@ func main() {
 
 	// Initializing the threadpool
 	for i := range 10 {
-		go worker(i, jobs, signal, &scheduler)
+		go worker(i, jobs, signal, &scheduler, &client)
 	}
 
 	// Main scheduling logic

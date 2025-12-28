@@ -7,14 +7,25 @@ services:
       context: .
       dockerfile: Dockerfile
       target: build-release-stage
-  
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true
+    environment:
+      MONGO_URI: "mongodb://crawler:crawler-pwd@db:27017"
   db:
     image: mongo
+    healthcheck:
+      test: mongosh --eval 'db.adminCommand("ping").ok'
+      interval: 5s
+      timeout: 5s
+      retries: 3
     restart: always
     environment:
       MONGO_INITDB_ROOT_USERNAME: crawler
       MONGO_INITDB_ROOT_PASSWORD: crawler-pwd
     volumes:
       - crawler-volume:/data/db
+
 volumes:
   crawler-volume:
