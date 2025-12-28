@@ -21,11 +21,11 @@ The web crawler will consist of 3 major parts -> the **crawler** that will visit
 
 The scheduler will start with some seed URLS, and will feed the URL to the crawler. Then, the retrieved content will be parsed and the through the content, the inverted-index (for search) will be made and the URLs extracted will be passed back to the scheduler.
 
-To prevent re-crawling of the same URLs, a **bloomfilter** (in this case, a hashmap as implementing a full-fledged bloomfilter is timeconsuming - I've already implemented one [here](https://github.com/IAmRiteshKoushik/bluedis/pull/20)) will be used to check if a URL has already been visited or not. This way we check for previously crawled URLs in an efficient manner -> regarding both time and space.
+To prevent re-crawling of the same URLs, a **hashmap** (technically speaking, a bloom-filter is strictly better here, but as implementing a full-fledged bloomfilter is timeconsuming - and I've already implemented one [here](https://github.com/IAmRiteshKoushik/bluedis/pull/20) - I'll be sticking to a hashmap) will be used to check if a URL has already been visited or not.
 
 Periodic re-crawling of websites to fetch updated content is currently out of scope for this project. I will also first make a single threaded application, and then move on to a concurrent application (the crawler and the parser) using a thread pool for resource sharing and channels for communication b/w the crawler and the parser.
 
-Synchronizing the crawler and parser along with not trying to overflow the URL queue (I'll probably be using a normal queue for URL scheduling) will be an interesting challenge -> what will I do if the queue is full but the parser wants to insert X URLS? Will I wait and block till the queue is empty? That could lead to a deadlock (queue full, crawlers ready to pass the content to the parser, but parser is waiting for the queue to free up -> I'm working with limited threads here) Do I write the content to a DB and continue crawling? The parser can read the data w/o blocking the crawler. Do I JUST write the URLS in the DB? the scheduler can read from the DB and schedule -> marking them crawled/not-crawled to restart from the last un-crawled URL. Interesting design decisions to be made...
+Synchronizing the crawler and parser while trying not to overflow the URL queue (I'll probably be using a normal queue for URL scheduling) will be an interesting challenge -> what will I do if the queue is full but the parser wants to insert X URLS? Will I wait and block till the queue is empty? That could lead to a deadlock (queue full, crawlers ready to pass the content to the parser, but parser is waiting for the queue to free up -> I'm working with limited threads here) Do I write the content to a DB and continue crawling? The parser can read the data w/o blocking the crawler. Do I JUST write the URLS in the DB? the scheduler can read from the DB and schedule -> marking them crawled/not-crawled to restart from the last un-crawled URL. Interesting design decisions to be made...
 
 I decided to go for the not-so elegant - if the queue is full, drop additional URLS. The best way would be to write to write the extra URLS to the db, but the logic is difficult (writing then deciding when to read from the DB vs scheduler) so I took the easy way out.
 
@@ -45,9 +45,9 @@ I used logging to determine the crawling progress, queue growth and queue growth
 ![alt text](images/queue_growth.png)
 
 ### Experience
-Overall it was a great learning experience. I worked with concurrency and implemented threadpools for the first time. Also this is my first web-crawler implementation. The project is also completely based on Docker, and I learnt a lot about Docker as well. I'm especially proud as this is the first time I implemented a multi-stage build on a distroless base image along with a complete docker-compose, the DB is containerized as well. I also learnt about HTML parsing, and even though we have parsers you still have to dig a bit into HTML structure and how to avoid unwanted data. I also tried my best to follow go patterns to make the code as efficient and readable as possible.
+Overall it was a great learning experience. I worked with concurrency and implemented threadpools for the first time. Also this is my first web-crawler implementation. The project is also completely based on Docker, and I learnt a lot about Docker as well. I'm especially proud as this is the first time I implemented a multi-stage build on a distroless base image along with a complete docker-compose, the DB is containerized as well. I also learnt about HTML parsing, and even though we have parsers you still have to dig a bit into HTML structure and how to avoid unwanted data.
 
-I'm very proud of my first project that focusses completely on concurrency, and whereas there is a lot of future scope, I'm happy with what I've been able to achieve. 
+I'm very proud of my first project that focusses completely on concurrency, and whereas there is a lot of future scope, I'm happy with what I've been able to achieve. I also tried my best to follow go patterns to make the code as efficient and readable as possible.
 
 ### Pros
 - Uses thread-pools to reduce overhead of creating and destroying go-routines, and also from making too many go-routines
@@ -61,6 +61,7 @@ I'm very proud of my first project that focusses completely on concurrency, and 
 - Completely containerized to help fast setup
 
 ### Cons (which technically also mean future-scope)
+- Actually implement the bloomfilter instead of the hashmap
 - Doesn't handle any links outside of Wikipedia (BUT can be made to handle relatively easily)
 - Sharing the DB connection can lead to contention with increase in workers -> have to implement batched writes to help
 - Similar concerns with queuing process, would like a centralized queue system that takes care of enqueuing and dequeueing (a bit complex to implement hence why I made the parser handle enqueuing -> can face a lot of issues where the scheduler infinitely blocks or drops URLs when switching between dequeueing and enqueueing)
