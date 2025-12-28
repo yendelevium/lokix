@@ -8,24 +8,39 @@ import (
 	"github.com/yendelevium/lokix/internal/collections"
 )
 
-// This will act as our thread-pool
-func worker(id int, jobs <-chan string, queue *collections.Queue, dbClient *internal.DBClient, crawledSet *collections.CrawledSet) {
-	for job := range jobs {
-		// Don't rescrape things that have already been scraped
-		if crawledSet.Contains(job) {
-			continue
-		}
-		byteData := internal.FetchPage(job)
+type ParseJob struct {
+	byteData []byte
+	url      string
+}
+
+const WORKERS = 20
+
+// These workers will act as our threadpool(s)
+func fetchWorker(id int, fetchURLs <-chan string, parseData chan<- ParseJob) {
+	for url := range fetchURLs {
+		byteData := internal.FetchPage(url)
+		// log.Printf("FETCH JOB %d: URL: %s ", id, url)
 		if len(byteData) == 0 {
-			// Couldn't fetch data, possibly due to malformed URLS (not handling them entirely)
+			// If no data recieved from the URL (maybe a 404), wait for the next job
 			continue
 		}
-		keywords, pageHyperlinks := internal.ParseHTML(byteData, "https://en.wikipedia.org")
 
-		// log.Printf("JOB %d: URL: %s ", id, job)
-		dbClient.InsertWebpage(job, keywords)
-		crawledSet.Add(job)
+		parseData <- ParseJob{
+			byteData,
+			url,
+		}
+	}
+}
 
+func parseWorker(id int, parseData <-chan ParseJob, queue *collections.Queue, dbClient *internal.DBClient, crawledSet *collections.CrawledSet) {
+	for data := range parseData {
+		keywords, pageHyperlinks := internal.ParseHTML(data.byteData, "https://en.wikipedia.org")
+
+		// log.Printf("PARSE JOB %d: URL: %s ", id, data.url)
+		dbClient.InsertWebpage(data.url, keywords)
+		crawledSet.Add(data.url)
+
+		// Add the page-links to the scheduler
 		for _, hyperlink := range pageHyperlinks {
 			if hyperlink == "" {
 				// The page didn't have min 50 URLS, so the remaining are empty
@@ -48,11 +63,15 @@ func main() {
 	scheduler.Enqueue("https://en.wikipedia.org/wiki/Plant")
 
 	crawledSet := collections.NewCrawledSet()
-	jobs := make(chan string, 10)
+	fetchURLs := make(chan string, WORKERS)
+	parseData := make(chan ParseJob, WORKERS)
 
-	// Initializing the threadpool
-	for i := range 10 {
-		go worker(i, jobs, &scheduler, &client, &crawledSet)
+	// Initializing the threadpool(s)
+	for i := range WORKERS {
+		go fetchWorker(i, fetchURLs, parseData)
+	}
+	for i := range WORKERS {
+		go parseWorker(i, parseData, &scheduler, &client, &crawledSet)
 	}
 
 	// Crawler Stats -> Every 10 seconds
@@ -70,35 +89,29 @@ func main() {
 		}
 	}()
 
+	// Dispatch first job to enqueue additional URLS
+	targetURL, _ := scheduler.Dequeue()
+	fetchURLs <- targetURL
+
+	for scheduler.Empty() {
+		// Wait till queue is filled by the first seed
+		// TODO: This is busy waiting :( would like to avoid this if I can
+	}
+
 	// Main scheduling logic
-	for {
-		targetURL, err := scheduler.Dequeue()
-		if err != nil {
-			// Wait
-			time.Sleep(3 * time.Second)
-			targetURL, err = scheduler.Dequeue()
-
-			// Termination condition (But will terminate early if the first routine to send signal doesn't have any URLs in it's HTML)
-			// Even if the other workers have, I'm only checking the first signal and terminating based on that, making this flawed
-			if err != nil {
-				break
-			}
+	for crawledSet.Total() <= 2000 && !scheduler.Empty() {
+		targetURL, _ = scheduler.Dequeue()
+		if crawledSet.Contains(targetURL) {
+			// Don't rescrape existing URLs
+			continue
 		}
 
-		// Dispatch job to worker
-		jobs <- targetURL
-
-		// Another ending condition -> when I reach 2000 scraped URLS (imperfect again)
-		// This can stop while the final (or even more) goroutine hasn't finished scraping so gotta think abt that
-		if crawledSet.Total() == 2000 {
-			break
-		}
+		// Dispatch jobs
+		fetchURLs <- targetURL
 	}
 
 	// Stop the stats
 	ticker.Stop()
 	done <- true
-	close(jobs)
-	close(done)
 	log.Printf("Total Pages Crawled: %d, Total Queued: %d", crawledSet.Total(), scheduler.TotalQueued())
 }
