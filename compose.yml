@@ -7,3 +7,14 @@ services:
       context: .
       dockerfile: Dockerfile
       target: build-release-stage
+  
+  db:
+    image: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: crawler
+      MONGO_INITDB_ROOT_PASSWORD: crawler-pwd
+    volumes:
+      - crawler-volume:/data/db
+volumes:
+  crawler-volume:

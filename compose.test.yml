@@ -6,3 +6,12 @@ services:
       context: .
       dockerfile: Dockerfile
       target: run-test-stage
+  
+  db:
+    image: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: crawler
+      MONGO_INITDB_ROOT_PASSWORD: crawler-pwd
+    volumes:
+      - crawler-volume:/var/lib/mongo
