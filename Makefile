@@ -4,5 +4,7 @@ build:
 compose:
 	docker compose up --build --abort-on-container-exit
 
+test:
+	docker compose -f compose.test.yml up --build
 # TODO: Add `test` as well
 # TODO: Do I replace make build with docker? IDK lol

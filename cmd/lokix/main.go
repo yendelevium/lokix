@@ -46,7 +46,11 @@ func parseWorker(id int, parseData <-chan ParseJob, queue *collections.Queue, db
 				// The page didn't have min 50 URLS, so the remaining are empty
 				continue
 			}
-			queue.Enqueue(hyperlink)
+
+			// Add only if not already crawled
+			if !crawledSet.Contains(hyperlink) {
+				queue.Enqueue(hyperlink)
+			}
 		}
 
 	}
