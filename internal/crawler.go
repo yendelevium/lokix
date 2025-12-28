@@ -21,7 +21,7 @@ func FetchPage(url string) []byte {
 		return []byte{}
 	}
 	defer resp.Body.Close()
-	log.Println("Recvd Data", resp.Status)
+	// log.Println("Recvd Data", resp.Status)
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

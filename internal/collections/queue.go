@@ -1,4 +1,4 @@
-package internal
+package collections
 
 import (
 	"fmt"
@@ -11,9 +11,10 @@ type node struct {
 }
 
 type Queue struct {
-	head *node
-	tail *node
-	mu   *sync.Mutex
+	head  *node
+	tail  *node
+	total int
+	mu    *sync.Mutex
 }
 
 // Implement the Queue
@@ -24,6 +25,7 @@ func (q *Queue) Enqueue(item string) {
 		val:  item,
 		next: nil,
 	}
+	q.total++
 
 	if q.head == nil {
 		q.head = &newNode
@@ -58,6 +60,13 @@ func (q *Queue) Empty() bool {
 		return true
 	}
 	return false
+}
+
+func (q *Queue) TotalQueued() int {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+
+	return q.total
 }
 
 func NewQueue() Queue {

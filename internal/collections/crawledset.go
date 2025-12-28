@@ -1,4 +1,4 @@
-package internal
+package collections
 
 import (
 	"hash/fnv"
@@ -17,6 +17,7 @@ func (c *CrawledSet) Add(url string) {
 	defer c.mu.Unlock()
 	c.crawledURLS[hashURL(url)] = true
 }
+
 func (c *CrawledSet) Contains(url string) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()

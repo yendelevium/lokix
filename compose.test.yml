@@ -1,7 +1,6 @@
-name: lokix-test
+name: lokix
 services:
   crawler:
-    restart: on-failure
     build:
       context: .
       dockerfile: Dockerfile
@@ -19,13 +18,12 @@ services:
       interval: 5s
       timeout: 5s
       retries: 3
-
     restart: always
     environment:
       MONGO_INITDB_ROOT_USERNAME: crawler
       MONGO_INITDB_ROOT_PASSWORD: crawler-pwd
     volumes:
-      - crawler-volume:/var/lib/mongo
+      - crawler-volume:/data/db
 
 volumes:
   crawler-volume:
