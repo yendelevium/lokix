@@ -7,6 +7,9 @@ A project to learn more about web crawler internals. Topics to cover:
 - Building the web-crawler from scratch -> the URL queue, the crawler, the HTML content parser, the index and inverted index.
 - Pros and Cons of the implementation
 
+![Crawler-Working](images/fetch_and_parse.png)
+**The duplicate URLS are not actually being crawled again, but being logged twicefor the FETCH and the PARSE jobs each**
+
 ### Setup
 Recommended - Docker
 - Docker -> `make compose`
