@@ -17,7 +17,11 @@ func FetchPage(url string) []byte {
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		log.Printf("Failed to fetch URL: %s", err.Error())
+		log.Printf("Failed to fetch: %s, URL: %s", err.Error(), url)
+		return []byte{}
+	}
+	if resp.StatusCode != http.StatusOK {
+		// Couldn't fetch URL, so return empty body
 		return []byte{}
 	}
 	defer resp.Body.Close()

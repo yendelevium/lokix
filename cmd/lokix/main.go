@@ -9,29 +9,27 @@ import (
 )
 
 // This will act as our thread-pool
-func worker(id int, jobs <-chan string, signal chan<- struct{}, queue *collections.Queue, dbClient *internal.DBClient, crawledSet *collections.CrawledSet) {
+func worker(id int, jobs <-chan string, queue *collections.Queue, dbClient *internal.DBClient, crawledSet *collections.CrawledSet) {
 	for job := range jobs {
 		// Don't rescrape things that have already been scraped
 		if crawledSet.Contains(job) {
 			continue
 		}
 		byteData := internal.FetchPage(job)
+		if len(byteData) == 0 {
+			// Couldn't fetch data, possibly due to malformed URLS (not handling them entirely)
+			continue
+		}
 		keywords, pageHyperlinks := internal.ParseHTML(byteData, "https://en.wikipedia.org")
 
 		// log.Printf("JOB %d: URL: %s ", id, job)
 		dbClient.InsertWebpage(job, keywords)
 		crawledSet.Add(job)
 
-		if queue.Empty() {
-			for _, hyperlink := range pageHyperlinks {
-				queue.Enqueue(hyperlink)
-			}
-			signal <- struct{}{}
-		} else {
-			for _, hyperlink := range pageHyperlinks {
-				queue.Enqueue(hyperlink)
-			}
+		for _, hyperlink := range pageHyperlinks {
+			queue.Enqueue(hyperlink)
 		}
+
 	}
 }
 
@@ -47,11 +45,10 @@ func main() {
 
 	crawledSet := collections.NewCrawledSet()
 	jobs := make(chan string, 10)
-	signal := make(chan struct{}, 1)
 
 	// Initializing the threadpool
 	for i := range 10 {
-		go worker(i, jobs, signal, &scheduler, &client, &crawledSet)
+		go worker(i, jobs, &scheduler, &client, &crawledSet)
 	}
 
 	// Crawler Stats -> Every 10 seconds
@@ -74,14 +71,12 @@ func main() {
 		targetURL, err := scheduler.Dequeue()
 		if err != nil {
 			// Wait
-			<-signal
+			time.Sleep(3 * time.Second)
 			targetURL, err = scheduler.Dequeue()
 
 			// Termination condition (But will terminate early if the first routine to send signal doesn't have any URLs in it's HTML)
 			// Even if the other workers have, I'm only checking the first signal and terminating based on that, making this flawed
 			if err != nil {
-				close(jobs)
-				close(signal)
 				break
 			}
 		}
@@ -92,8 +87,6 @@ func main() {
 		// Another ending condition -> when I reach 2000 scraped URLS (imperfect again)
 		// This can stop while the final (or even more) goroutine hasn't finished scraping so gotta think abt that
 		if crawledSet.Total() == 2000 {
-			close(jobs)
-			close(signal)
 			break
 		}
 	}
@@ -101,5 +94,7 @@ func main() {
 	// Stop the stats
 	ticker.Stop()
 	done <- true
+	close(jobs)
+	close(done)
 	log.Printf("Total Pages Crawled: %d, Total Queued: %d", crawledSet.Total(), scheduler.TotalQueued())
 }

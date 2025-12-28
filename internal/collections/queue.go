@@ -13,6 +13,7 @@ type node struct {
 type Queue struct {
 	head  *node
 	tail  *node
+	size  int
 	total int
 	mu    *sync.Mutex
 }
@@ -21,10 +22,16 @@ type Queue struct {
 func (q *Queue) Enqueue(item string) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
+
+	if q.size > 30000 {
+		// Max queue size reached, don't add more
+		return
+	}
 	newNode := node{
 		val:  item,
 		next: nil,
 	}
+	q.size++
 	q.total++
 
 	if q.head == nil {
@@ -48,6 +55,7 @@ func (q *Queue) Dequeue() (string, error) {
 	if q.head == nil {
 		q.tail = nil
 	}
+	q.size--
 	return top, nil
 
 }
