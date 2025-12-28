@@ -15,7 +15,7 @@ Recommended - Docker
 NOTE TO SELF: If you want the build to fail if tests fail, you should run the tests within the build-stage before the binary is built, or ensure your CI pipeline specifically targets the run-test-stage first.
 
 ### Architecture
-![Architecture + Workflow](queue_scrape_parse.png)
+![Architecture + Workflow](images/queue_scrape_parse.png)
 #### Web Crawler
 The web crawler will consist of 3 major parts -> the **crawler** that will visit the websites and get their content, the **parser** which will parse the content retrieved by the crawler, and extract key words and URLs, and finally, the **scheduler** which will be the one to give the crawler the new URLS. 
 
@@ -40,9 +40,9 @@ I'll first implement a "static" search engine, where I first crawl how much I wa
 
 ### Performance
 I used logging to determine the crawling progress, queue growth and queue growth/progress. The timestamped logs made it easier to plot the graphs
-![alt text](crawling_progress.png)
-![alt text](queue_growth_vs_progress.png)
-![alt text](queue_growth.png)
+![alt text](images/crawling_progress.png)
+![alt text](images/queue_growth_vs_progress.png)
+![alt text](images/queue_growth.png)
 
 ### Experience
 Overall it was a great learning experience. I worked with concurrency and implemented threadpools for the first time. Also this is my first web-crawler implementation. The project is also completely based on Docker, and I learnt a lot about Docker as well. I'm especially proud as this is the first time I implemented a multi-stage build on a distroless base image along with a complete docker-compose, the DB is containerized as well. I also learnt about HTML parsing, and even though we have parsers you still have to dig a bit into HTML structure and how to avoid unwanted data. I also tried my best to follow go patterns to make the code as efficient and readable as possible.
