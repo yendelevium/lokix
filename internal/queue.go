@@ -11,41 +11,59 @@ type node struct {
 }
 
 type Queue struct {
-	Head *node
-	Tail *node
-	Mu   *sync.Mutex
+	head *node
+	tail *node
+	mu   *sync.Mutex
 }
 
 // Implement the Queue
 func (q *Queue) Enqueue(item string) {
-	q.Mu.Lock()
-	defer q.Mu.Unlock()
+	q.mu.Lock()
+	defer q.mu.Unlock()
 	newNode := node{
 		val:  item,
 		next: nil,
 	}
 
-	if q.Head == nil {
-		q.Head = &newNode
-		q.Tail = &newNode
+	if q.head == nil {
+		q.head = &newNode
+		q.tail = &newNode
 	} else {
-		q.Tail.next = &newNode
-		q.Tail = q.Tail.next
+		q.tail.next = &newNode
+		q.tail = q.tail.next
 	}
 }
 
 func (q *Queue) Dequeue() (string, error) {
-	q.Mu.Lock()
-	defer q.Mu.Unlock()
+	q.mu.Lock()
+	defer q.mu.Unlock()
 
-	if q.Head == nil {
+	if q.head == nil {
 		return "", fmt.Errorf("Queue is EMPTY!")
 	}
-	top := q.Head.val
-	q.Head = q.Head.next
-	if q.Head == nil {
-		q.Tail = nil
+	top := q.head.val
+	q.head = q.head.next
+	if q.head == nil {
+		q.tail = nil
 	}
 	return top, nil
 
+}
+
+func (q *Queue) Empty() bool {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+
+	if q.head == nil {
+		return true
+	}
+	return false
+}
+
+func NewQueue() Queue {
+	return Queue{
+		head: nil,
+		tail: nil,
+		mu:   &sync.Mutex{},
+	}
 }
