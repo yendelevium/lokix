@@ -109,7 +109,8 @@ func ParseHTML(htmlData []byte, sourceURL string) ([]string, []string) {
 					continue
 				}
 
-				sanitizedWord := strings.TrimSpace(word)
+				// Make everything lowercase for uniformity
+				sanitizedWord := strings.ToLower(strings.TrimSpace(word))
 				if sanitizedWord != "" {
 					keywords[keywordIdx] = word
 					keywordIdx++

@@ -118,4 +118,16 @@ func main() {
 	ticker.Stop()
 	done <- true
 	log.Printf("Total Pages Crawled: %d, Total Queued: %d", crawledSet.Total(), scheduler.TotalQueued())
+
+	// Creating the inverted index
+	err := client.CreateInvertedIndex()
+	if err != nil {
+		log.Fatalf("Failed to create inverted index, %v", err)
+	}
+
+	log.Println("Showing results when searching for the word 'eukaryote'")
+	err = client.Search("eukaryote")
+	if err != nil {
+		log.Printf("Failed to search index, %v", err)
+	}
 }

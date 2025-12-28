@@ -31,21 +31,23 @@ I decided to go for the not-so elegant - if the queue is full, drop additional U
 
 
 #### Search Engine
-_I only manually implemented the index, Inverted Index is relatively easy to implement in MongoDB using it's standard keyword analyzer_
 The search engine functionality is basically just an inverted index table for now. We'll start by creating an index with `URL` and the `keywords` found in that URL, and then create an inverted index of the form `keyword` - `URLs`. There won't be any crazy ranking algorithm to rank the results, probably just the most keyword matches.
 
 I also want to limit the number of keywords analyzed per website to a limit as I don't want an insanely large collection -> building a search engine is not the primary purpose of this project. This will also help in leading to the different pages being parsed in about the same time, which might help performance...
 
-I'll first implement a "static" search engine, where I first crawl how much I want to crawl and then search. But I also want to try dynamic updation of indices -> crawling continues in the bg and search engine also works.
+I'll first implement a "static" search engine, where I first crawl how much I want to crawl and then search. But I also want to try dynamic updation of indices -> crawling continues in the bg and search engine also works. **I DIDN'T IMPLMENT DYNAMIC INDEXING**
+
+Example Search
+![Search Example](images/search.png)
 
 ### Performance
 I used logging to determine the crawling progress, queue growth and queue growth/progress. The timestamped logs made it easier to plot the graphs
-![alt text](images/crawling_progress.png)
-![alt text](images/queue_growth_vs_progress.png)
-![alt text](images/queue_growth.png)
+![Crawling Progress](images/crawling_progress.png)
+![Queue Growth](images/queue_growth.png)
+![Queue Growth vs Crawl Progress](images/queue_growth_vs_progress.png)
 
 ### Experience
-Overall it was a great learning experience. I worked with concurrency and implemented threadpools for the first time. Also this is my first web-crawler implementation. The project is also completely based on Docker, and I learnt a lot about Docker as well. I'm especially proud as this is the first time I implemented a multi-stage build on a distroless base image along with a complete docker-compose, the DB is containerized as well. I also learnt about HTML parsing, and even though we have parsers you still have to dig a bit into HTML structure and how to avoid unwanted data.
+Overall it was a great learning experience. I worked with concurrency and implemented threadpools for the first time. Also this is my first web-crawler implementation. The project is also completely based on Docker, and I learnt a lot about Docker as well. I'm especially proud as this is the first time I implemented a multi-stage build on a distroless base image along with a complete docker-compose, the DB is containerized as well. I also learnt about HTML parsing, and even though we have parsers you still have to dig a bit into HTML structure and how to avoid unwanted data. I also implemented a bare-bones inverted index, which serves basic search purpose but if I want to make it a search engine there's a long way to go.
 
 I'm very proud of my first project that focusses completely on concurrency, and whereas there is a lot of future scope, I'm happy with what I've been able to achieve. I also tried my best to follow go patterns to make the code as efficient and readable as possible.
 
@@ -59,6 +61,7 @@ I'm very proud of my first project that focusses completely on concurrency, and 
 - Limits queue size to stop the queue from growing infinitely (which would lead to memory issues)
 - Achieved 25-30 pages crawled per second using 20 workers
 - Completely containerized to help fast setup
+- Basic search functionality using mongodb inverted-index
 
 ### Cons (which technically also mean future-scope)
 - Actually implement the bloomfilter instead of the hashmap
