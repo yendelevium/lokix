@@ -103,7 +103,7 @@ func main() {
 	}
 
 	// Main scheduling logic
-	for crawledSet.Total() <= 2000 && !scheduler.Empty() {
+	for crawledSet.Total() <= 5000 && !scheduler.Empty() {
 		targetURL, _ = scheduler.Dequeue()
 		if crawledSet.Contains(targetURL) {
 			// Don't rescrape existing URLs

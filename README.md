@@ -46,8 +46,8 @@ Example Search
 ### Performance
 I used logging to determine the crawling progress, queue growth and queue growth/progress. The timestamped logs made it easier to plot the graphs
 ![Crawling Progress](images/crawling_progress.png)
-![Queue Growth](images/queue_growth.png)
-![Queue Growth vs Crawl Progress](images/queue_growth_vs_progress.png)
+![Queue Growth](images/queue_growth_vs_progress.png)
+![Queue Growth vs Crawl Progress](images/queue_growth.png)
 
 ### Experience
 Overall it was a great learning experience. I worked with concurrency and implemented threadpools for the first time. Also this is my first web-crawler implementation. The project is also completely based on Docker, and I learnt a lot about Docker as well. I'm especially proud as this is the first time I implemented a multi-stage build on a distroless base image along with a complete docker-compose, the DB is containerized as well. I also learnt about HTML parsing, and even though we have parsers you still have to dig a bit into HTML structure and how to avoid unwanted data. I also implemented a bare-bones inverted index, which serves basic search purpose but if I want to make it a search engine there's a long way to go.
@@ -62,7 +62,7 @@ I'm very proud of my first project that focusses completely on concurrency, and 
 - Creates an index for searching capabilities (also concurrent)
 - Shows stats every 10 seconds which include the no.of pages crawled and no.of URLS enqueued
 - Limits queue size to stop the queue from growing infinitely (which would lead to memory issues)
-- Achieved 25-30 pages crawled per second using 20 workers
+- Achieved ~60 pages crawled per second using 20+20 workers (crawlers + parsers)
 - Completely containerized to help fast setup
 - Basic search functionality using mongodb inverted-index
 

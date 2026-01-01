@@ -21,7 +21,8 @@ func (c *CrawledSet) Add(url string) {
 func (c *CrawledSet) Contains(url string) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	return c.crawledURLS[hashURL(url)]
+	_, ok := c.crawledURLS[hashURL(url)]
+	return ok
 }
 
 func (c *CrawledSet) Total() int {

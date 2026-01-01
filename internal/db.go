@@ -67,8 +67,12 @@ func (c *DBClient) Search(keyword string) error {
 	}
 
 	// Print the results
+	visited := make(map[string]bool)
 	for _, res := range results {
-		log.Printf("%s", res.URL)
+		if _, ok := visited[res.URL]; !ok {
+			log.Printf("%s", res.URL)
+			visited[res.URL] = true
+		}
 	}
 	return nil
 }
